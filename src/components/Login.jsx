@@ -1,0 +1,176 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../index.css";
+import "./Login.css";
+import image from "../assets/images/Image.png";
+
+import {
+  signInWithEmailAndPassword,
+  signInWithPopup,
+} from "firebase/auth";
+
+import { auth, googleProvider } from "../firebase";
+
+export default function Login() {
+  const navigate = useNavigate();
+
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginRemember, setLoginRemember] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  // Load Remember Me + Redirect if logged in
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("rememberEmail");
+    const savedPassword = localStorage.getItem("rememberPassword");
+    const savedRemember = localStorage.getItem("rememberMe");
+
+    if (savedRemember === "true") {
+      setLoginEmail(savedEmail || "");
+      setLoginPassword(savedPassword || "");
+      setLoginRemember(true);
+    }
+
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
+
+  // 🔵 Google Login
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+
+      const user = result.user;
+      const token = await user.getIdToken();
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("email", user.email);
+
+      navigate("/dashboard");
+
+    } catch (error) {
+      setLoginError(error.message);
+    }
+  };
+
+  // 🟢 Email/Password Login
+  const handleLogin = async () => {
+    if (!loginEmail || !loginPassword) {
+      setLoginError("Please enter email and password");
+      return;
+    }
+
+    setLoginLoading(true);
+    setLoginError("");
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        loginEmail,
+        loginPassword
+      );
+
+      const user = userCredential.user;
+
+      const token = await user.getIdToken();
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("email", user.email);
+
+      // Remember Me Logic
+      if (loginRemember) {
+        localStorage.setItem("rememberEmail", loginEmail);
+        localStorage.setItem("rememberPassword", loginPassword);
+        localStorage.setItem("rememberMe", "true");
+      } else {
+        localStorage.removeItem("rememberEmail");
+        localStorage.removeItem("rememberPassword");
+        localStorage.setItem("rememberMe", "false");
+      }
+
+      navigate("/dashboard");
+
+    } catch (err) {
+      setLoginError(err.message);
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+
+  return (
+    <main className="login-layout">
+      <section className="login-left">
+        <div className="login-card-box">
+          <h2>Welcome Back</h2>
+          <p>Enter your email and password to sign in</p>
+
+          <label>Email</label>
+          <input
+            type="email"
+            placeholder="Your email address"
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
+          />
+
+          <label>Password</label>
+          <input
+            type="password"
+            placeholder="Your password"
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+          />
+
+          {/* Remember Me */}
+          <div className="login-remember">
+            <label className="login-switch">
+              <input
+                type="checkbox"
+                checked={loginRemember}
+                onChange={(e) => setLoginRemember(e.target.checked)}
+              />
+              <span className="login-slider"></span>
+            </label>
+            <span>Remember me</span>
+          </div>
+
+          {loginError && (
+            <p style={{ color: "red", fontSize: "13px", marginTop: "10px" }}>
+              {loginError}
+            </p>
+          )}
+
+          <button
+            className="login-btn-main"
+            onClick={handleLogin}
+            disabled={loginLoading}
+          >
+            {loginLoading ? "Signing in..." : "Sign in"}
+          </button>
+
+          <p className="login-signup-link">
+            Don’t have an account?{" "}
+            <span onClick={() => navigate("/signup")}>Sign up</span>
+          </p>
+
+          <div className="login-social">
+            <i className="fa-brands fa-facebook-f"></i>
+            <i className="fa-brands fa-apple"></i>
+            <i
+              className="fa-brands fa-google"
+              onClick={handleGoogleLogin}
+              style={{ cursor: "pointer" }}
+            ></i>
+          </div>
+        </div>
+      </section>
+
+      <section className="login-right">
+        <img src={image} alt="login" />
+      </section>
+    </main>
+  );
+}
