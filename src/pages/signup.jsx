@@ -167,7 +167,7 @@ export default function Signup() {
       <section className="signup-hero">
         <div className="signup-welcome">
           <h1>Welcome!</h1>
-          <p>Create your account and start your journey 🚀</p>
+          <p>Use these awesome forms to login or create new account in your project for free.</p>
         </div>
       </section>
 
