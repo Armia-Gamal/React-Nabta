@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +10,10 @@ export default function ResetPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    document.title = "Reset-Password | Nabta Seniors";
+  }, []);
 
   const handleReset = async () => {
     if (!email) {

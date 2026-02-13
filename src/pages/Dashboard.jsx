@@ -6,6 +6,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [showNotification, setShowNotification] = useState(false);
 
+  useEffect(() => {
+    document.title = "Dashboard | Nabta Seniors";
+  }, []);
+
   // 🔔 نوتيفكيشن بس لو كان مسجل قبل كده
   useEffect(() => {
     const alreadyLogged = localStorage.getItem("alreadyLogged");

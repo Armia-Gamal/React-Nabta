@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./signup.css";
 import { signInWithPopup } from "firebase/auth";
@@ -12,6 +12,10 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    document.title = "Sign Up | Nabta Seniors";
+  }, []);
 
   // ===============================
   // 🟢 Email/Password Signup

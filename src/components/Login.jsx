@@ -23,6 +23,10 @@ export default function Login() {
   const [resetMessage, setResetMessage] = useState("");
 
   useEffect(() => {
+    document.title = "Login | Nabta Seniors";
+  }, []);
+
+  useEffect(() => {
     const savedEmail = localStorage.getItem("rememberEmail");
     const savedPassword = localStorage.getItem("rememberPassword");
     const savedRemember = localStorage.getItem("rememberMe");
