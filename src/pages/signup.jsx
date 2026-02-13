@@ -125,8 +125,7 @@ export default function Signup() {
         <div className="signup-welcome">
           <h1>Welcome!</h1>
           <p>
-            Use these awesome forms to login or create new account in your
-            project for free.
+          Register now to detect plant diseases quickly and accurately using our AI-powered system for healthier crops.
           </p>
         </div>
       </section>
