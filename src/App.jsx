@@ -6,6 +6,7 @@ import Footer from "./components/Footer";
 
 import Dashboard from "./pages/Dashboard";
 import Signup from "./pages/signup.jsx";
+import ResetPassword from "./pages/ResetPassword";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 
@@ -23,6 +24,9 @@ function App() {
 
         {/* Signup Page */}
         <Route path="/signup" element={<Signup />} />
+
+        <Route path="/reset-password" element={<ResetPassword />} />
+
 
         {/* Protected Dashboard */}
         <Route

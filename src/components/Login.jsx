@@ -7,6 +7,7 @@ import image from "../assets/images/Image.png";
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
+  sendPasswordResetEmail, // لسه موجود زي ما هو
 } from "firebase/auth";
 
 import { auth, googleProvider } from "../firebase";
@@ -19,8 +20,8 @@ export default function Login() {
   const [loginRemember, setLoginRemember] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
 
-  // Load Remember Me + Redirect if logged in
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberEmail");
     const savedPassword = localStorage.getItem("rememberPassword");
@@ -42,10 +43,20 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-
       const user = result.user;
-      const token = await user.getIdToken();
 
+      const isNewUser = result._tokenResponse?.isNewUser;
+
+      if (isNewUser) {
+        await user.delete();
+        await auth.signOut();
+        setLoginError(
+          "This account is not registered. Please sign up first."
+        );
+        return;
+      }
+
+      const token = await user.getIdToken();
       localStorage.setItem("token", token);
       localStorage.setItem("email", user.email);
 
@@ -65,6 +76,7 @@ export default function Login() {
 
     setLoginLoading(true);
     setLoginError("");
+    setResetMessage("");
 
     try {
       const userCredential = await signInWithEmailAndPassword(
@@ -74,13 +86,11 @@ export default function Login() {
       );
 
       const user = userCredential.user;
-
       const token = await user.getIdToken();
 
       localStorage.setItem("token", token);
       localStorage.setItem("email", user.email);
 
-      // Remember Me Logic
       if (loginRemember) {
         localStorage.setItem("rememberEmail", loginEmail);
         localStorage.setItem("rememberPassword", loginPassword);
@@ -94,12 +104,28 @@ export default function Login() {
       navigate("/dashboard");
 
     } catch (err) {
-      setLoginError(err.message);
+      setLoginError("Invalid email or password.");
     } finally {
       setLoginLoading(false);
     }
   };
 
+  // 🔥 لسه موجود بس مش مستخدم (عشان قولتي منمسحش حاجة)
+  const handleForgotPassword = async () => {
+    if (!loginEmail) {
+      setLoginError("Please enter your email first.");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, loginEmail);
+      setResetMessage("Password reset email sent successfully.");
+      setLoginError("");
+    } catch (error) {
+      setLoginError("Failed to send reset email.");
+      setResetMessage("");
+    }
+  };
 
   return (
     <main className="login-layout">
@@ -124,7 +150,15 @@ export default function Login() {
             onChange={(e) => setLoginPassword(e.target.value)}
           />
 
-          {/* Remember Me */}
+          <div style={{ textAlign: "right", marginBottom: "10px" }}>
+            <span
+              onClick={() => navigate("/reset-password")}
+              style={{ cursor: "pointer", fontSize: "13px", color: "#fc0038" }}
+            >
+              Forgot password?
+            </span>
+          </div>
+
           <div className="login-remember">
             <label className="login-switch">
               <input
@@ -140,6 +174,12 @@ export default function Login() {
           {loginError && (
             <p style={{ color: "red", fontSize: "13px", marginTop: "10px" }}>
               {loginError}
+            </p>
+          )}
+
+          {resetMessage && (
+            <p style={{ color: "green", fontSize: "13px", marginTop: "10px" }}>
+              {resetMessage}
             </p>
           )}
 

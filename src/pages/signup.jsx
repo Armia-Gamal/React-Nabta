@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./signup.css";
-import emailjs from "@emailjs/browser";
-
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
 
@@ -49,7 +47,7 @@ export default function Signup() {
 
       const { idToken, localId } = data;
 
-      // 🔥 Save user in Firestore
+      // Save user in Firestore
       await fetch(
         `https://firestore.googleapis.com/v1/projects/gp-hu-42ca5/databases/(default)/documents/users?documentId=${localId}`,
         {
@@ -70,30 +68,10 @@ export default function Signup() {
         }
       );
 
-      // ✅ احفظ التوكن الأول
       localStorage.setItem("token", idToken);
       localStorage.setItem("email", email);
 
-      // ✅ ادخل الداشبورد فورًا
       navigate("/dashboard");
-
-      // 📩 ابعت الإيميل في الخلفية (من غير await)
-      emailjs
-        .send(
-          "service_hmboe24",
-          "template_p2plvhi",
-          {
-            user_name: name,
-            user_email: email,
-          },
-          "sMpmBpw_dLO3EsmgR"
-        )
-        .then(() => {
-          console.log("Welcome email sent ✅");
-        })
-        .catch((err) => {
-          console.log("Email failed ❌", err);
-        });
 
     } catch (err) {
       setError(err.message);
@@ -111,7 +89,6 @@ export default function Signup() {
       const user = result.user;
       const token = await user.getIdToken();
 
-      // Save in Firestore
       await fetch(
         `https://firestore.googleapis.com/v1/projects/gp-hu-42ca5/databases/(default)/documents/users?documentId=${user.uid}`,
         {
@@ -132,30 +109,10 @@ export default function Signup() {
         }
       );
 
-      // ✅ Save token
       localStorage.setItem("token", token);
       localStorage.setItem("email", user.email);
 
-      // ✅ Navigate فورًا
       navigate("/dashboard");
-
-      // 📩 Email in background
-      emailjs
-        .send(
-          "service_hmboe24",
-          "template_p2plvhi",
-          {
-            user_name: user.displayName || "Google User",
-            user_email: user.email,
-          },
-          "sMpmBpw_dLO3EsmgR"
-        )
-        .then(() => {
-          console.log("Google welcome email sent ✅");
-        })
-        .catch((err) => {
-          console.log("Email failed ❌", err);
-        });
 
     } catch (err) {
       setError(err.message);
@@ -167,13 +124,15 @@ export default function Signup() {
       <section className="signup-hero">
         <div className="signup-welcome">
           <h1>Welcome!</h1>
-          <p>Use these awesome forms to login or create new account in your project for free.</p>
+          <p>
+            Use these awesome forms to login or create new account in your
+            project for free.
+          </p>
         </div>
       </section>
 
       <div className="signup-layout">
         <div className="signup-card">
-
           <h2>Register with</h2>
 
           <div className="signup-social">
@@ -232,7 +191,6 @@ export default function Signup() {
             Already have an account?{" "}
             <span onClick={() => navigate("/")}>Sign In</span>
           </div>
-
         </div>
       </div>
     </>
