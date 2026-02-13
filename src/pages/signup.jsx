@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./signup.css";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -20,69 +21,26 @@ export default function Signup() {
   // ===============================
   // 🟢 Email/Password Signup
   // ===============================
+
   const handleSignup = async () => {
-    if (!name || !email || !password) {
-      setError("Please fill all fields");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
     try {
-      const res = await fetch(
-        "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyAa5gqPTc9NKFe56ERU6dgs-f2mMBS7LDg",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            password,
-            returnSecureToken: true,
-          }),
-        }
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
       );
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error.message.replaceAll("_", " "));
-      }
-
-      const { idToken, localId } = data;
-
-      // Save user in Firestore
-      await fetch(
-        `https://firestore.googleapis.com/v1/projects/gp-hu-42ca5/databases/(default)/documents/users?documentId=${localId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-            fields: {
-              name: { stringValue: name },
-              email: { stringValue: email },
-              createdAt: {
-                timestampValue: new Date().toISOString(),
-              },
-            },
-          }),
-        }
-      );
-
-      localStorage.setItem("token", idToken);
-      localStorage.setItem("email", email);
+      await updateProfile(userCredential.user, {
+        displayName: name,
+      });
 
       navigate("/dashboard");
 
     } catch (err) {
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   };
+
 
   // ===============================
   // 🔵 Google Signup

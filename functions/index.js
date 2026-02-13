@@ -4,37 +4,27 @@ const nodemailer = require("nodemailer");
 
 admin.initializeApp();
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "armiagamal24@gmail.com",
-    pass: "zzapxsptqwmnaybr",
-  },
-});
+const gmailUser = process.env.GMAIL_USER;
+const gmailPass = process.env.GMAIL_PASS;
 
-exports.sendWelcomeEmail = functions
-  .region("us-central1")
-  .auth.user()
-  .onCreate(async (user) => {
+exports.sendWelcomeEmail = functions.auth.user().onCreate(async (user) => {
+  if (!user.email) return null;
 
-    if (!user.email) return null;
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: gmailUser,
+      pass: gmailPass,
+    },
+  });
 
-    // ⏳ نستنى ثانيتين عشان لو الحساب هيتحذف
-    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    try {
-      // 🔍 نتأكد إن المستخدم لسه موجود
-      await admin.auth().getUser(user.uid);
-    } catch (error) {
-      console.log("User was deleted, no email sent.");
-      return null;
-    }
 
-    const mailOptions = {
-      from: `Nabta-Seniors <armiagamal24@gmail.com>`,
-      to: user.email,
-      subject: `Welcome to Nabta-Seniors, ${user.displayName || ""}! ❤️`,
-      html: `
+  const mailOptions = {
+    from: `Nabta-Seniors <${gmailUser}>`,
+    to: user.email,
+    subject: `Welcome to Nabta-Seniors, ${user.displayName || "User"}! ❤️`,
+    html: `
 <div style="font-family: system-ui, sans-serif, Arial; font-size: 16px; background-color: #fff8f1;">
   <div style="max-width: 600px; margin: auto; padding: 20px;">
 
@@ -46,7 +36,7 @@ exports.sendWelcomeEmail = functions
       />
     </a>
 
-    <p>Welcome to the Nabta-Seniors family!❤️ We're excited to have you on board.</p>
+    <p>Welcome to the Nabta-Seniors family ❤️ We're excited to have you on board.</p>
 
     <p>Your account has been successfully created, and you're now ready to explore all the great features we offer.</p>
 
@@ -59,7 +49,7 @@ exports.sendWelcomeEmail = functions
       </a>
     </p>
 
-    <p>If you have any questions or need help getting started, our support team is just an email away at armiagamal24@gmail.com.</p>
+    <p>If you have any questions or need help getting started, our support team is just an email away at ${gmailUser}.</p>
 
     <p>
       Best regards,<br>
@@ -74,15 +64,11 @@ exports.sendWelcomeEmail = functions
 
   </div>
 </div>
-      `,
-    };
+        `,
+      };
 
-    try {
-      await transporter.sendMail(mailOptions);
-      console.log("Email sent to:", user.email);
-    } catch (error) {
-      console.error("Email error:", error);
-    }
+  await transporter.sendMail(mailOptions);
+  console.log("Email sent to:", user.email);
 
-    return null;
-  });
+  return null;
+});

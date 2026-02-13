@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase";
 import "./Dashboard.css";
 
 export default function Dashboard() {
@@ -10,36 +12,23 @@ export default function Dashboard() {
     document.title = "Dashboard | Nabta Seniors";
   }, []);
 
-  // 🔔 نوتيفكيشن بس لو كان مسجل قبل كده
-  useEffect(() => {
-    const alreadyLogged = localStorage.getItem("alreadyLogged");
-
-    if (alreadyLogged === "true") {
-      setShowNotification(true);
-      localStorage.removeItem("alreadyLogged");
-
-      setTimeout(() => {
-        setShowNotification(false);
-      }, 3000);
+  const logout = async () => {
+    try {
+      await signOut(auth); // بس كده
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
     }
-  }, []);
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("email");
-    navigate("/");
   };
 
   return (
     <>
-      {/* 🔔 Notification */}
       {showNotification && (
         <div className="notification info">
-          You are already logged in 
+          You are already logged in
         </div>
       )}
 
-      {/* ✅ Dashboard simple view */}
       <div
         style={{
           height: "100vh",
@@ -50,7 +39,7 @@ export default function Dashboard() {
           gap: "20px",
         }}
       >
-        <h1> You are logged in</h1>
+        <h1>You are logged in</h1>
 
         <button
           onClick={logout}

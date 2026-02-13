@@ -7,7 +7,11 @@ import image from "../assets/images/Image.png";
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
-  sendPasswordResetEmail, // لسه موجود زي ما هو
+  sendPasswordResetEmail,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
 } from "firebase/auth";
 
 import { auth, googleProvider } from "../firebase";
@@ -22,10 +26,12 @@ export default function Login() {
   const [loginError, setLoginError] = useState("");
   const [resetMessage, setResetMessage] = useState("");
 
+  // Page title
   useEffect(() => {
     document.title = "Login | Nabta Seniors";
   }, []);
 
+  // 🔥 تحميل بيانات Remember Me
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberEmail");
     const savedPassword = localStorage.getItem("rememberPassword");
@@ -36,16 +42,31 @@ export default function Login() {
       setLoginPassword(savedPassword || "");
       setLoginRemember(true);
     }
+  }, []);
 
-    const token = localStorage.getItem("token");
-    if (token) {
-      navigate("/dashboard", { replace: true });
-    }
+  // 🔐 لو المستخدم مسجل بالفعل
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        navigate("/dashboard", { replace: true });
+      }
+    });
+
+    return () => unsubscribe();
   }, [navigate]);
 
+  // =========================
   // 🔵 Google Login
+  // =========================
   const handleGoogleLogin = async () => {
     try {
+      await setPersistence(
+        auth,
+        loginRemember
+          ? browserLocalPersistence
+          : browserSessionPersistence
+      );
+
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
@@ -54,15 +75,16 @@ export default function Login() {
       if (isNewUser) {
         await user.delete();
         await auth.signOut();
-        setLoginError(
-          "This account is not registered. Please sign up first."
-        );
+        setLoginError("This account is not registered. Please sign up first.");
         return;
       }
 
-      const token = await user.getIdToken();
-      localStorage.setItem("token", token);
-      localStorage.setItem("email", user.email);
+      // 🔥 تخزين Remember Me
+      if (loginRemember) {
+        localStorage.setItem("rememberEmail", user.email);
+        localStorage.setItem("rememberPassword", loginPassword);
+        localStorage.setItem("rememberMe", "true");
+      }
 
       navigate("/dashboard");
 
@@ -71,7 +93,9 @@ export default function Login() {
     }
   };
 
-  // 🟢 Email/Password Login
+  // =========================
+  // 🟢 Email Login
+  // =========================
   const handleLogin = async () => {
     if (!loginEmail || !loginPassword) {
       setLoginError("Please enter email and password");
@@ -83,18 +107,20 @@ export default function Login() {
     setResetMessage("");
 
     try {
-      const userCredential = await signInWithEmailAndPassword(
+      await setPersistence(
+        auth,
+        loginRemember
+          ? browserLocalPersistence
+          : browserSessionPersistence
+      );
+
+      await signInWithEmailAndPassword(
         auth,
         loginEmail,
         loginPassword
       );
 
-      const user = userCredential.user;
-      const token = await user.getIdToken();
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("email", user.email);
-
+      // 🔥 هنا تخزين Remember Me
       if (loginRemember) {
         localStorage.setItem("rememberEmail", loginEmail);
         localStorage.setItem("rememberPassword", loginPassword);
@@ -107,14 +133,13 @@ export default function Login() {
 
       navigate("/dashboard");
 
-    } catch (err) {
+    } catch {
       setLoginError("Invalid email or password.");
     } finally {
       setLoginLoading(false);
     }
   };
 
-  // 🔥 لسه موجود بس مش مستخدم (عشان قولتي منمسحش حاجة)
   const handleForgotPassword = async () => {
     if (!loginEmail) {
       setLoginError("Please enter your email first.");
@@ -125,7 +150,7 @@ export default function Login() {
       await sendPasswordResetEmail(auth, loginEmail);
       setResetMessage("Password reset email sent successfully.");
       setLoginError("");
-    } catch (error) {
+    } catch {
       setLoginError("Failed to send reset email.");
       setResetMessage("");
     }
