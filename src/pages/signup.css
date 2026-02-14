@@ -104,6 +104,35 @@
   cursor: pointer;
 }
 
+.signup-password-field {
+  position: relative;
+}
+
+.signup-password-field input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding-right: 40px;
+}
+
+.signup-password-field i {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.signup-password-field i:hover {
+  color: #42d3c4;
+}
+
+
 .signup-social {
   margin-bottom: 18px;
   display: flex;

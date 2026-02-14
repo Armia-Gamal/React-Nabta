@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./signup.css";
-import { signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "../firebase";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth, googleProvider, db, functions } from "../firebase";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signInWithPopup,
+} from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -13,34 +18,56 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     document.title = "Sign Up | Nabta Seniors";
   }, []);
 
-  // ===============================
-  // 🟢 Email/Password Signup
-  // ===============================
+  const sendEmail = httpsCallable(functions, "sendWelcomeEmail");
 
+  // ===============================
+  // 🟢 Email Signup
+  // ===============================
   const handleSignup = async () => {
     try {
+      setLoading(true);
+      setError("");
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
 
-      await updateProfile(userCredential.user, {
+      const user = userCredential.user;
+
+      await updateProfile(user, {
         displayName: name,
+      });
+
+      // 🔥 إنشاء document في Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        name,
+        email,
+        createdAt: new Date(),
+      });
+
+      // 🔥 إرسال الإيميل
+      await sendEmail({
+        email,
+        name,
       });
 
       navigate("/dashboard");
 
     } catch (err) {
+      console.error(err);
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
-
 
   // ===============================
   // 🔵 Google Signup
@@ -49,34 +76,22 @@ export default function Signup() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
-      const token = await user.getIdToken();
 
-      await fetch(
-        `https://firestore.googleapis.com/v1/projects/gp-hu-42ca5/databases/(default)/documents/users?documentId=${user.uid}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            fields: {
-              name: { stringValue: user.displayName || "Google User" },
-              email: { stringValue: user.email },
-              createdAt: {
-                timestampValue: new Date().toISOString(),
-              },
-            },
-          }),
-        }
-      );
+      await setDoc(doc(db, "users", user.uid), {
+        name: user.displayName || "Google User",
+        email: user.email,
+        createdAt: new Date(),
+      });
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("email", user.email);
+      await sendEmail({
+        email: user.email,
+        name: user.displayName || "Google User",
+      });
 
       navigate("/dashboard");
 
     } catch (err) {
+      console.error(err);
       setError(err.message);
     }
   };
@@ -127,12 +142,21 @@ export default function Signup() {
           />
 
           <label>Password</label>
-          <input
-            type="password"
-            placeholder="Your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+
+          <div className="signup-password-field">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+
+            <i
+              className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}
+              onClick={() => setShowPassword(!showPassword)}
+            ></i>
+          </div>
+
 
           {error && (
             <p style={{ color: "red", fontSize: "13px", marginTop: "10px" }}>

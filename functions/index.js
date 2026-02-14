@@ -7,24 +7,39 @@ admin.initializeApp();
 const gmailUser = process.env.GMAIL_USER;
 const gmailPass = process.env.GMAIL_PASS;
 
-exports.sendWelcomeEmail = functions.auth.user().onCreate(async (user) => {
-  if (!user.email) return null;
+exports.sendWelcomeEmail = functions.https.onCall(async (data, context) => {
+  try {
+    // 🔐 تأكد إن المستخدم مسجل دخول
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "User must be authenticated."
+      );
+    }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: gmailUser,
-      pass: gmailPass,
-    },
-  });
+    const email = data.email;
+    const name = data.name || "User";
 
+    if (!email) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Email is required."
+      );
+    }
 
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: gmailUser,
+        pass: gmailPass,
+      },
+    });
 
-  const mailOptions = {
-    from: `Nabta-Seniors <${gmailUser}>`,
-    to: user.email,
-    subject: `Welcome to Nabta-Seniors, ${user.displayName || "User"}! ❤️`,
-    html: `
+    const mailOptions = {
+      from: `Nabta-Seniors <${gmailUser}>`,
+      to: email,
+      subject: `Welcome to Nabta-Seniors, ${name}! ❤️`,
+      html: `
 <div style="font-family: system-ui, sans-serif, Arial; font-size: 16px; background-color: #fff8f1;">
   <div style="max-width: 600px; margin: auto; padding: 20px;">
 
@@ -59,16 +74,25 @@ exports.sendWelcomeEmail = functions.auth.user().onCreate(async (user) => {
     <hr style="margin-top:30px;" />
 
     <p style="font-size:14px; color:#555;">
-      Account created for: <strong>${user.displayName || user.email}</strong>
+      Account created for: <strong>${name} (${email})</strong>
     </p>
 
   </div>
 </div>
-        `,
-      };
+      `,
+    };
 
-  await transporter.sendMail(mailOptions);
-  console.log("Email sent to:", user.email);
+    await transporter.sendMail(mailOptions);
 
-  return null;
+    console.log("Email sent to:", email);
+
+    return { success: true };
+
+  } catch (error) {
+    console.error("Email error:", error);
+    throw new functions.https.HttpsError(
+      "internal",
+      "Failed to send email."
+    );
+  }
 });

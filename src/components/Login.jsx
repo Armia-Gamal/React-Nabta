@@ -7,8 +7,6 @@ import image from "../assets/images/Image.png";
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
-  sendPasswordResetEmail,
-  onAuthStateChanged,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence
@@ -24,14 +22,13 @@ export default function Login() {
   const [loginRemember, setLoginRemember] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
-  const [resetMessage, setResetMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Page title
   useEffect(() => {
     document.title = "Login | Nabta Seniors";
   }, []);
 
-  // 🔥 تحميل بيانات Remember Me
+  // تحميل Remember Me
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberEmail");
     const savedPassword = localStorage.getItem("rememberPassword");
@@ -44,55 +41,6 @@ export default function Login() {
     }
   }, []);
 
-  // 🔐 لو المستخدم مسجل بالفعل
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        navigate("/dashboard", { replace: true });
-      }
-    });
-
-    return () => unsubscribe();
-  }, [navigate]);
-
-  // =========================
-  // 🔵 Google Login
-  // =========================
-  const handleGoogleLogin = async () => {
-    try {
-      await setPersistence(
-        auth,
-        loginRemember
-          ? browserLocalPersistence
-          : browserSessionPersistence
-      );
-
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-
-      const isNewUser = result._tokenResponse?.isNewUser;
-
-      if (isNewUser) {
-        await user.delete();
-        await auth.signOut();
-        setLoginError("This account is not registered. Please sign up first.");
-        return;
-      }
-
-      // 🔥 تخزين Remember Me
-      if (loginRemember) {
-        localStorage.setItem("rememberEmail", user.email);
-        localStorage.setItem("rememberPassword", loginPassword);
-        localStorage.setItem("rememberMe", "true");
-      }
-
-      navigate("/dashboard");
-
-    } catch (error) {
-      setLoginError(error.message);
-    }
-  };
-
   // =========================
   // 🟢 Email Login
   // =========================
@@ -104,7 +52,6 @@ export default function Login() {
 
     setLoginLoading(true);
     setLoginError("");
-    setResetMessage("");
 
     try {
       await setPersistence(
@@ -120,7 +67,7 @@ export default function Login() {
         loginPassword
       );
 
-      // 🔥 هنا تخزين Remember Me
+      // Remember Me
       if (loginRemember) {
         localStorage.setItem("rememberEmail", loginEmail);
         localStorage.setItem("rememberPassword", loginPassword);
@@ -131,28 +78,45 @@ export default function Login() {
         localStorage.setItem("rememberMe", "false");
       }
 
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
 
-    } catch {
+    } catch (error) {
       setLoginError("Invalid email or password.");
     } finally {
       setLoginLoading(false);
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!loginEmail) {
-      setLoginError("Please enter your email first.");
-      return;
-    }
-
+  // =========================
+  // 🔵 Google Login
+  // =========================
+  const handleGoogleLogin = async () => {
     try {
-      await sendPasswordResetEmail(auth, loginEmail);
-      setResetMessage("Password reset email sent successfully.");
-      setLoginError("");
-    } catch {
-      setLoginError("Failed to send reset email.");
-      setResetMessage("");
+      await setPersistence(
+        auth,
+        loginRemember
+          ? browserLocalPersistence
+          : browserSessionPersistence
+      );
+
+      const result = await signInWithPopup(auth, googleProvider);
+
+      // 🔥 لو ده أول مرة (يعني Firebase عمل user جديد)
+      if (result._tokenResponse?.isNewUser) {
+
+        // نمسح الحساب فورًا قبل ما يتسجل
+        await result.user.delete();
+
+        await auth.signOut();
+
+        setLoginError("This account is not registered. Please sign up first.");
+        return;
+      }
+
+      navigate("/dashboard", { replace: true });
+
+    } catch (error) {
+      setLoginError("Login failed.");
     }
   };
 
@@ -172,12 +136,22 @@ export default function Login() {
           />
 
           <label>Password</label>
-          <input
-            type="password"
-            placeholder="Your password"
-            value={loginPassword}
-            onChange={(e) => setLoginPassword(e.target.value)}
-          />
+
+          <div className="login-password-field">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Your password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+            />
+
+            <i
+              className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}
+              onClick={() => setShowPassword(!showPassword)}
+            ></i>
+          </div>
+
+
 
           <div style={{ textAlign: "right", marginBottom: "10px" }}>
             <span
@@ -203,12 +177,6 @@ export default function Login() {
           {loginError && (
             <p style={{ color: "red", fontSize: "13px", marginTop: "10px" }}>
               {loginError}
-            </p>
-          )}
-
-          {resetMessage && (
-            <p style={{ color: "green", fontSize: "13px", marginTop: "10px" }}>
-              {resetMessage}
             </p>
           )}
 

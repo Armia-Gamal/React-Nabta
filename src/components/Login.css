@@ -69,6 +69,35 @@
   border-radius: 20px;
 }
 
+.login-password-field {
+  position: relative;
+}
+
+.login-password-field input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding-right: 40px;
+}
+
+.login-password-field i {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.login-password-field i:hover {
+  color: #42d3c4;
+}
+
+
 .login-slider::before {
   content: "";
   position: absolute;
