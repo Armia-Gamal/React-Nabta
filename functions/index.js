@@ -9,7 +9,6 @@ const gmailPass = process.env.GMAIL_PASS;
 
 exports.sendWelcomeEmail = functions.https.onCall(async (data, context) => {
   try {
-    // 🔐 تأكد إن المستخدم مسجل دخول
     if (!context.auth) {
       throw new functions.https.HttpsError(
         "unauthenticated",
