@@ -1,12 +1,16 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
+const fetch = require("node-fetch"); // هنستخدمه للـ ping
 
 admin.initializeApp();
 
 const gmailUser = process.env.GMAIL_USER;
 const gmailPass = process.env.GMAIL_PASS;
 
+/* =========================================================
+   SEND WELCOME EMAIL (زي ما هو - بدون تغيير)
+========================================================= */
 exports.sendWelcomeEmail = functions.https.onCall(async (data, context) => {
   try {
     if (!context.auth) {
@@ -95,3 +99,25 @@ exports.sendWelcomeEmail = functions.https.onCall(async (data, context) => {
     );
   }
 });
+
+/* =========================================================
+   KEEP HUGGING FACE ALIVE (1st Gen - بدون Scheduler API)
+   بيعمل Ping كل 10 دقائق
+========================================================= */
+
+exports.keepHuggingFaceAlive = functions.pubsub
+  .schedule("every 10 minutes")
+  .timeZone("UTC")
+  .onRun(async (context) => {
+    try {
+      const response = await fetch(
+        "https://armia-gamal-plant-leaf-detection-api.hf.space"
+      );
+
+      console.log("HF Ping Status:", response.status);
+    } catch (error) {
+      console.error("HF Ping Failed:", error);
+    }
+
+    return null;
+  });

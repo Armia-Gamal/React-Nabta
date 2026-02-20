@@ -1,61 +1,134 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import { auth } from "../firebase";
+import { useState, useEffect } from "react";
+import Sidebar from "../components/Sidebar";
+import PlantAnalysis from "./dashboard/PlantAnalysis";
+import AIAssistant from "./dashboard/AIAssistant";
+import History from "./dashboard/History";
+import Profile from "./dashboard/Profile";
 import "./Dashboard.css";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const [showNotification, setShowNotification] = useState(false);
+
+  const [activePage, setActivePage] = useState("plant");
+
+  // 0 Upload
+  // 1 Detect
+  // 2 Classify
+  // 3 Segment
+  const [step, setStep] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     document.title = "Dashboard | Nabta Seniors";
   }, []);
 
-  const logout = async () => {
-    try {
-      await signOut(auth); // بس كده
-      navigate("/", { replace: true });
-    } catch (error) {
-      console.error("Logout error:", error);
+  const renderContent = () => {
+    switch (activePage) {
+      case "ai":
+        return <AIAssistant />;
+      case "history":
+        return <History />;
+      case "profile":
+        return <Profile />;
+      default:
+        return (
+          <PlantAnalysis
+            setStep={setStep}
+            setProgressValue={setProgress}
+          />
+        );
     }
   };
 
+  const isDone = (index) => step > index;
+  const isActive = (index) => step === index;
+
   return (
-    <>
-      {showNotification && (
-        <div className="notification info">
-          You are already logged in
+    <div className="dashboard-layout">
+
+      <Sidebar activePage={activePage} setActivePage={setActivePage} />
+
+      <div className="main-content">
+
+        <nav className="navbar-dash">
+
+          <div className="navbar-left">
+            <span className="breadcrumb">
+              Dashboard /
+              <span className="breadcrumb-active">
+                {activePage === "plant" && " Plant Analysis"}
+                {activePage === "ai" && " AI Assistant"}
+                {activePage === "history" && " History"}
+                {activePage === "profile" && " Profile"}
+              </span>
+            </span>
+          </div>
+
+          {activePage === "plant" && (
+            <div className="navbar-center">
+
+              <div className="progress-steps">
+                <span>Upload</span>
+                <span>→</span>
+                <span>Detect</span>
+                <span>→</span>
+                <span>Classify</span>
+                <span>→</span>
+                <span>Segment</span>
+              </div>
+
+              <div className="progress-dots">
+
+                {/* Upload */}
+                <span className={`dot ${isDone(0) ? "dot-done" : isActive(0) ? "dot-active" : "dot-gray"}`}>
+                  {isDone(0) && "✓"}
+                </span>
+
+                {/* Upload → Detect (progressive line) */}
+                <div className="dot-line">
+                  <div
+                    className="dot-line-fill"
+                    style={{
+                      width: `${step === 0 ? progress : step > 0 ? 100 : 0}%`
+                    }}
+                  ></div>
+                </div>
+
+                {/* Detect */}
+                <span className={`dot ${isDone(1) ? "dot-done" : isActive(1) ? "dot-active" : "dot-gray"}`}>
+                  {isDone(1) && "✓"}
+                </span>
+
+                <div className={`dot-line ${step > 1 ? "dot-line-active" : ""}`}></div>
+
+                {/* Classify */}
+                <span className={`dot ${isDone(2) ? "dot-done" : isActive(2) ? "dot-active" : "dot-gray"}`}>
+                  {isDone(2) && "✓"}
+                </span>
+
+                <div className={`dot-line ${step > 2 ? "dot-line-active" : ""}`}></div>
+
+                {/* Segment */}
+                <span className={`dot ${isDone(3) ? "dot-done" : isActive(3) ? "dot-active" : "dot-gray"}`}>
+                  {isDone(3) && "✓"}
+                </span>
+
+              </div>
+
+            </div>
+          )}
+
+        <div className="navbar-right">
+          <div className="search-box">
+            <input type="text" placeholder="Type here..." />
+          </div>
+          <div className="nav-icon">⚙</div>
+          <div className="nav-icon">🔔</div>
+          <div className="nav-icon">☀</div>
         </div>
-      )}
+        </nav>
 
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "20px",
-        }}
-      >
-        <h1>You are logged in</h1>
-
-        <button
-          onClick={logout}
-          style={{
-            padding: "10px 24px",
-            borderRadius: "10px",
-            border: "none",
-            background: "#ef4444",
-            color: "#fff",
-            cursor: "pointer",
-            fontSize: "14px",
-          }}
-        >
-          Logout
-        </button>
+        {renderContent()}
       </div>
-    </>
+    </div>
   );
 }

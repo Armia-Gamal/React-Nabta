@@ -1,6 +1,6 @@
 .navbar {
-  position: absolute;
-  top: 20px;
+  position: fixed;   /* بدل absolute */
+  top: 20px;         /* زي ما هي */
   left: 50%;
   transform: translateX(-50%);
   width: 85%;
@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 8px 30px rgba(0,0,0,.08);
-  z-index: 10;
+  z-index: 1000;     /* نزودها بس */
   transition: all .35s ease;
 }
 

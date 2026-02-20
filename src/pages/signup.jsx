@@ -174,7 +174,7 @@ export default function Signup() {
 
           <div className="signup-footer">
             Already have an account?{" "}
-            <span onClick={() => navigate("/")}>Sign In</span>
+            <span onClick={() => navigate("/login")}>Sign In</span>
           </div>
         </div>
       </div>

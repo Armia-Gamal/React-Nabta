@@ -1,48 +1,54 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Navbar from "./components/Navbar";
 import Login from "./components/Login";
-import Footer from "./components/Footer";
-
-import Dashboard from "./pages/Dashboard";
-import Signup from "./pages/signup.jsx";
+import Signup from "./pages/Signup";
 import ResetPassword from "./pages/ResetPassword";
 
+import Dashboard from "./pages/Dashboard";
+import AIAssistant from "./pages/dashboard/AIAssistant";
+import History from "./pages/dashboard/History";
+import Profile from "./pages/dashboard/Profile";
+
 import ProtectedRoute from "./routes/ProtectedRoute";
+
+import PublicLayout from "./layouts/PublicLayout";
+import ProtectedLayout from "./layouts/ProtectedLayout";
+import LandingLayout from "./layouts/LandingLayout";
+
+import Landing from "./pages/Landing";
 
 function App() {
   return (
     <BrowserRouter>
-
-      {/* Navbar ثابت */}
-      <Navbar />
-
       <Routes>
 
-        {/* Login Page */}
-        <Route path="/" element={<Login />} />
+        {/* ===== Landing Page (Navbar + Landing Footer) ===== */}
+        <Route element={<LandingLayout />}>
+          <Route path="/" element={<Landing />} />
+        </Route>
 
-        {/* Signup Page */}
-        <Route path="/signup" element={<Signup />} />
+        {/* ===== Public Pages (Login / Signup) ===== */}
+        <Route element={<PublicLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+        </Route>
 
-        <Route path="/reset-password" element={<ResetPassword />} />
-
-
-        {/* Protected Dashboard */}
+        {/* ===== Protected Pages ===== */}
         <Route
-          path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <ProtectedLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/ai" element={<AIAssistant />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
 
       </Routes>
-
-      {/* Footer ثابت */}
-      <Footer />
-
     </BrowserRouter>
   );
 }
