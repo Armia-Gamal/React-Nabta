@@ -15,6 +15,8 @@ export default function PlantAnalysis({ setStep, setProgressValue }) {
   const [progress, setProgress] = useState(0);
   const [totalBoxes, setTotalBoxes] = useState(0);
 
+  const apiKey = import.meta.env.VITE_Detect_API_KEY;
+
   const fileInputRef = useRef();
 
   const radius = 36;
@@ -57,7 +59,7 @@ export default function PlantAnalysis({ setStep, setProgressValue }) {
       "POST",
       "https://armia-gamal-plant-leaf-detection-api.hf.space/detect"
     );
-    xhr.setRequestHeader("Authorization", "Bearer super_secret_key_123");
+    xhr.setRequestHeader("Authorization", `Bearer ${apiKey}`);
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) {
