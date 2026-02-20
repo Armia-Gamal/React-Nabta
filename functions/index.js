@@ -121,3 +121,45 @@ exports.keepHuggingFaceAlive = functions.pubsub
 
     return null;
   });
+
+/* =========================================================
+   SECURE COHERE CHAT PROXY
+========================================================= */
+
+exports.cohereChat = functions.https.onCall(async (data, context) => {
+  try {
+    // اختياري: لو عايزة تخليه للمستخدمين المسجلين بس
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "User must be authenticated."
+      );
+    }
+
+    const apiKey = process.env.COHERE_KEY;
+
+    const response = await fetch("https://api.cohere.ai/v1/chat", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Cohere API error");
+    }
+
+    return result;
+
+  } catch (error) {
+    console.error("Cohere Error:", error);
+    throw new functions.https.HttpsError(
+      "internal",
+      "Chat service failed."
+    );
+  }
+});
